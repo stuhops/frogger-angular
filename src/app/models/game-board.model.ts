@@ -1,6 +1,7 @@
 import { BoardRow } from './board-row.model';
 import { CanvasContext } from './canvas-context.model';
 import { Collision } from './collision.model';
+import { Game } from './game.model';
 import { Circle } from './shapes.model';
 
 export interface GameBoardParams {
@@ -14,7 +15,7 @@ export class GameBoard {
 
   constructor(params: GameBoardParams) {
     this.rows = params.rows;
-    this.wonArr = params.wonArr ?? [false, false, false, false, false];
+    this.wonArr = params.wonArr ?? Array(Game.WIN_COLS).fill(false);
   }
 
   allIdxDone(): boolean {
@@ -42,6 +43,6 @@ export class GameBoard {
     this.rows.forEach((row: BoardRow) => row.render(canvas));
   }
   update(elapsedTime: number): void {
-    this.rows.forEach((row: BoardRow) => row.update(elapsedTime));
+    this.rows.forEach((row: BoardRow) => row.update(elapsedTime, this.wonArr));
   }
 }

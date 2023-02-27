@@ -26,6 +26,7 @@ export interface BoardRowParams {
   currObstacles?: Obstacle[];
   min?: Coords;
   max?: Coords;
+  wonCols?: (Obstacle | null)[];
 }
 
 export class BoardRow {
@@ -37,6 +38,7 @@ export class BoardRow {
   obstacles: Obstacle[] = [];
   nextObstacles: ObstacleTimer[];
   nextObstaclesIdx: number | null;
+  wonCols?: (Obstacle | null)[];
   min: Coords;
   max: Coords;
 
@@ -51,6 +53,7 @@ export class BoardRow {
     this.nextObstaclesIdx = params.obstaclesIdx ?? this.nextObstacles.length ? 0 : null;
     this.min = params.min ?? { x: -Game.SQR_SIZE, y: this.position.y };
     this.max = params.max ?? { x: 2 * Game.SQR_SIZE, y: this.position.y + this.size.height };
+    this.wonCols = params.wonCols;
   }
 
   get rowStart(): Position {
@@ -83,6 +86,7 @@ export class BoardRow {
       currObstacles: this.obstacles?.map((o: Obstacle) => o.deepCopy()),
       min: { ...this.min },
       max: { ...this.max },
+      wonCols: this.wonCols ? [...this.wonCols] : undefined,
     });
   }
 
@@ -96,12 +100,15 @@ export class BoardRow {
     }
     let next: Collision | null = collisions.reduce((prev: Collision | null, curr: Collision) => {
       let nextCollisionType: CollisionType | undefined;
+      let nextColumn: number | undefined;
+
       if (prev?.type === CollisionType.die || curr.type === CollisionType.die)
         nextCollisionType = CollisionType.die;
-      else if (prev?.type === CollisionType.win || curr.type === CollisionType.win)
+      else if (prev?.type === CollisionType.win || curr.type === CollisionType.win) {
         nextCollisionType = CollisionType.win;
-
-      const nextColumn = Math.max(prev?.column ?? -1, curr.column ?? -1); // -1 is undefined
+        const colWidth = Game.SQR_SIZE / Game.WIN_COLS;
+        nextColumn = Math.floor(hitCircle.center.x / colWidth);
+      }
 
       const next: Collision = {
         drift: {
@@ -116,7 +123,7 @@ export class BoardRow {
         },
         type: nextCollisionType,
         points: (prev?.points ?? 0) + (curr.points ?? 0),
-        column: nextColumn !== -1 ? nextColumn : undefined,
+        column: nextColumn,
       };
       return next;
     }, null);
@@ -135,9 +142,11 @@ export class BoardRow {
   render(canvas: CanvasContext): void {
     this._renderBackground(canvas);
     this.obstacles.forEach((o) => o.render(canvas));
+    if (this.wonCols) this._renderWonCols(canvas);
   }
 
-  update(elapsedTime: number): void {
+  update(elapsedTime: number, wonArr: (Obstacle | null)[]): void {
+    if (this.wonCols) this.wonCols = wonArr;
     this._updateObstacles(elapsedTime);
     this._updateNextObstacles(elapsedTime);
   }
@@ -174,6 +183,13 @@ export class BoardRow {
         if (idx < this.background.length) this.background[idx].render(coords, canvas);
         else this.background[this.background.length - 1].render(coords, canvas);
       } else this.background.render(coords, canvas);
+    }
+  }
+
+  private _renderWonCols(canvas: CanvasContext): void {
+    if (!this.wonCols) return;
+    for (let idx = 0; idx < Game.WIN_COLS; idx++) {
+      const position = this.obstacles[]
     }
   }
 

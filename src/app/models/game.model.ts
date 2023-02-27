@@ -25,6 +25,7 @@ export class Game {
   static SQR_SIZE = 1024;
   static ROWS = 14;
   static ROW_HEIGHT = Game.SQR_SIZE / Game.ROWS;
+  static WIN_COLS = 5;
 
   character: Character;
 
